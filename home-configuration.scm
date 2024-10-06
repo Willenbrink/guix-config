@@ -4,15 +4,16 @@
 ;; need to capture the channels being used, as returned by "guix describe".
 ;; See the "Replicating Guix" section in the manual.
 
-(use-modules
- (gnu home)
- (gnu packages)
- (gnu services)
- (guix gexp)
- (gnu home services shepherd)
- (gnu home services sound)
- (gnu home services desktop)
- (gnu home services shells))
+(define-module (home-configuration)
+  #:use-module (gnu home)
+  #:use-module (gnu packages)
+  #:use-module (gnu services)
+  #:use-module (guix gexp)
+  #:use-module (gnu home services shepherd)
+  #:use-module (gnu home services sound)
+  #:use-module (gnu home services pm)
+  #:use-module (gnu home services desktop)
+  #:use-module (gnu home services shells))
 
 (home-environment
  ;; Below is the list of packages that will show up in your
@@ -57,7 +58,21 @@
    (service home-pipewire-service-type
             (home-pipewire-configuration
              (enable-pulseaudio? #t)))
-   (service home-fish-service-type)
+   (service home-batsignal-service-type
+            (home-batsignal-configuration
+             (danger-level 5)
+             (danger-command "loginctl suspend")))
+
+   (service home-fish-service-type
+            (home-fish-configuration
+             (environment-variables '(("XDG_CURRENT_DESKTOP" . "sway")
+                                      ("EDITOR" . "emacs")))
+             (aliases '(("reboot" . "loginctl reboot")
+                        ("update" . "sudo echo 'Start' && guix pull && guix upgrade && sudo guix system reconfigure ~/guix-config/config.scm && guix home reconfigure ~/guix-config/home-configuration.scm")
+                        ("cdda-update" . "guix install cataclysm-dda:tiles --with-git-url=cataclysm-dda=https://github.com/CleverRaven/Cataclysm-DDA.git")
+                        ("shell" . "guix shell -C -F -N -u sewi coreutils -D ungoogled-chromium --share=/dev/ --preserve='^DISPLAY\\$' --preserve='^XAUTHORITY\\$' --share=$XAUTHORITY --preserve='^DBUS_.*\\$'  --expose=/var/run/dbus/system_bus_socket --preserve='^XDG_RUNTIME_DIR\\$' --expose=$XDG_RUNTIME_DIR/pulse")
+                        ))
+             ))
    (service home-bash-service-type
             (home-bash-configuration
              (aliases '(("grep" . "grep --color=auto")
