@@ -72,13 +72,6 @@
 (use-package-modules
  certs bootloaders emacs xorg gnome ssh)
 
-(define etc-sudoers-config
-  (plain-file "etc-sudoers-config"
-              "Defaults  timestamp_timeout=480
-    root      ALL=(ALL) ALL
-    %wheel    ALL=(ALL) ALL
-    sewi  ALL=(ALL) NOPASSWD:/run/current-system/profile/bin/shutdown,/run/current-system/profile/bin/halt"))
-
 (operating-system
  (host-name "framework-guix")
  (timezone "Europe/Berlin")
@@ -138,7 +131,6 @@
                                        ;; "libvirt"
                                        )))
               %base-user-accounts))
- (sudoers-file etc-sudoers-config)
 
  ;; Globally-installed packages.
  (packages (append (list
