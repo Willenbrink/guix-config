@@ -4,7 +4,7 @@
 ;; need to capture the channels being used, as returned by "guix describe".
 ;; See the "Replicating Guix" section in the manual.
 
-(define-module (home-configuration)
+(define-module (home)
   #:use-module (gnu home)
   #:use-module (gnu packages)
   #:use-module (gnu services)
@@ -68,9 +68,9 @@
              (environment-variables '(("XDG_CURRENT_DESKTOP" . "sway")
                                       ("EDITOR" . "emacs")))
              (aliases '(("reboot" . "loginctl reboot")
-                        ("update" . "sudo echo 'Start' && guix pull && guix upgrade && sudo guix system reconfigure ~/guix-config/config.scm && guix home reconfigure ~/guix-config/home-configuration.scm")
+                        ("update" . "sudo echo 'Complete update: Running pull, upgrade, system reconfigure and home reconfigure' && guix pull && guix upgrade && sudo guix system reconfigure ~/guix-config/system.scm && guix home reconfigure ~/guix-config/home.scm")
                         ("cdda-update" . "guix install cataclysm-dda:tiles --with-git-url=cataclysm-dda=https://github.com/CleverRaven/Cataclysm-DDA.git")
-                        ("shell" . "guix shell -C -F -N -u sewi coreutils -D ungoogled-chromium --share=/dev/ --preserve='^DISPLAY\\$' --preserve='^XAUTHORITY\\$' --share=$XAUTHORITY --preserve='^DBUS_.*\\$'  --expose=/var/run/dbus/system_bus_socket --preserve='^XDG_RUNTIME_DIR\\$' --expose=$XDG_RUNTIME_DIR/pulse")
+                        ("shell" . "guix shell -C -F -N -u sewi coreutils -D ungoogled-chromium fish --share=/dev/ --preserve='^DISPLAY\\$' --preserve='^XAUTHORITY\\$' --preserve='^DBUS_.*\\$'  --expose=/var/run/dbus/system_bus_socket --preserve='^XDG_RUNTIME_DIR\\$' --expose=\\$XDG_RUNTIME_DIR/pulse")
                         ))
              ))
    (service home-bash-service-type
