@@ -58,7 +58,8 @@
  (gnu packages linux)
  (gnu packages libusb)
  (gnu packages nfs)
-
+ (gnu packages package-management)
+ (guix channels)
 
  (nongnu packages linux)
  (nongnu system linux-initrd)
@@ -67,10 +68,33 @@
  ;; (home-configuration)
 
  (guix utils))
+
+
 (use-service-modules
  desktop xorg ssh shepherd)
 (use-package-modules
  certs bootloaders emacs xorg gnome ssh)
+
+(define my-channels
+  (append
+   (list
+    ;; (channel
+    ;;  (name 'my-packages)
+    ;;  (url "file:///home/sewi/guix-config/")
+    ;;  (branch "master"))
+    ;; (channel
+    ;;  (name 'nonguix-local)
+    ;;  (url "file:///home/sewi/guix/nonguix"))
+    (channel
+     (name 'nonguix)
+     (url "https://gitlab.com/nonguix/nonguix")
+     ;; Enable signature verification:
+     (introduction
+      (make-channel-introduction
+       "897c1a470da759236cc11798f4e0a5f7d4d59fbc"
+       (openpgp-fingerprint
+        "2A39 3FFF 68F4 EF7A 3D29  12AF 6F51 20A0 22FB B2D5")))))
+   %default-channels))
 
 (operating-system
  (host-name "framework-guix")
@@ -88,9 +112,11 @@
  (firmware (list linux-firmware))
  ;; It's fitting to support the equally bare bones ‘-nographic’
  ;; QEMU option, which also nicely sidesteps forcing QWERTY.
- (kernel-arguments (list "console=tty0"
-                         "resume=/dev/nvme0n1p3"
-                         "resume_offset=38176768"))
+ (kernel-arguments (append
+                    (list "console=tty0"
+                          "resume=/dev/nvme0n1p3"
+                          "resume_offset=38176768")
+                    %default-kernel-arguments))
  (file-systems (append
                 (list (file-system
                        (device (uuid "fd1c49b1-761e-44e4-b99e-040d626df883"))
@@ -147,23 +173,25 @@
  (services
   (append
    (modify-services %desktop-services
-                    (elogind-service-type config =>
-                                          (elogind-configuration
-                                           (inherit config)
-                                           (hibernate-delay-seconds 7200)))
-                    (guix-service-type config =>
-                                       (guix-configuration
-                                        (inherit config)
-                                        (substitute-urls
-                                         (append (list "https://substitutes.nonguix.org")
-                                                 %default-substitute-urls))
-                                        (authorized-keys
-                                         (append (list (plain-file "non-guix.pub"
-                                                                   "(public-key
+                    (elogind-service-type
+                     config => (elogind-configuration
+                                (inherit config)
+                                (hibernate-delay-seconds 43210))) ; 12h
+                    (guix-service-type
+                     config => (guix-configuration
+                                (inherit config)
+                                ;; (channels my-channels)
+                                ;; (guix (guix-for-channels my-channels))
+                                (substitute-urls
+                                 (append (list "https://substitutes.nonguix.org")
+                                         %default-substitute-urls))
+                                (authorized-keys
+                                 (append (list (plain-file "non-guix.pub"
+                                                           "(public-key
     (ecc (curve Ed25519)
     (q #C1FD53E5D4CE971933EC50C9F307AE2171A2D3B52C804642A7A35F84F3A4EA98#)))"
-                                                                   ))
-                                                 %default-authorized-guix-keys))))
+                                                           ))
+                                         %default-authorized-guix-keys))))
                     (gdm-service-type config =>
                                       (gdm-configuration
                                        (inherit config)
@@ -176,18 +204,25 @@
    (list
     (service gnome-keyring-service-type
              (gnome-keyring-configuration
-              (pam-services
-               '(
-                 ("gdm-password" . "login")
-                 ("passwd" . "passwd")
-                 ))
+              ;; (pam-services
+              ;;  '(
+              ;;    ("gdm-password" . "login")
+              ;;    ("passwd" . "passwd")
+              ;;    ))
               ))
     (service bluetooth-service-type
              (bluetooth-configuration
               (auto-enable? #t)))
     (simple-service 'blueman dbus-root-service-type (list blueman))
     (service thermald-service-type)
-    (service tlp-service-type)
+    ;; Either tlp or ppd
+    (service tlp-service-type
+             (tlp-configuration
+              (sched-powersave-on-bat? #f)
+                                        ;Unsure what this does
+              ;; (runtime-pm-on-bat "auto")
+              (restore-device-state-on-startup? #t)))
+    ;; (service power-profiles-daemon-service-type)
                                         ;(service fprintd-service-type)
 
 
